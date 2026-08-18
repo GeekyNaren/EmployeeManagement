@@ -7,8 +7,8 @@
         public string MobileNo { get; set; } = string.Empty;
         public string EmailId { get; set; } = string.Empty;
         public string? PANCardNo { get; set; }
-        public DateTime JoiningDate { get; set; }
-        public DateTime? PreviousCompanyLastWorkingDate { get; set; }
+        public DateOnly JoiningDate { get; set; }
+        public DateOnly? PreviousCompanyLastWorkingDate { get; set; }
         public string Education { get; set; } = string.Empty;
     }
 }

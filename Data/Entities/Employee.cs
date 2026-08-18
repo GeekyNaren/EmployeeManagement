@@ -14,17 +14,17 @@ namespace EmployeeManagement.Data.Entities
         [Required]
         [MaxLength(150)]
         [Column("employee_name")]
-        public required string EmployeeName { get; set; } = null!;
+        public string EmployeeName { get; set; }
 
         [Required]
         [MaxLength(10)]
         [Column("mobile_no")]
-        public required string MobileNo { get; set; } = null!;
+        public string MobileNo { get; set; }
 
         [Required]
         [MaxLength(255)]
         [Column("email_id")]
-        public required string EmailId { get; set; } = null!;
+        public string EmailId { get; set; }
 
         [MaxLength(10)]
         [Column("pan_card_no")]
@@ -32,14 +32,14 @@ namespace EmployeeManagement.Data.Entities
 
         [Required]
         [Column("joining_date")]
-        public required DateTime JoiningDate { get; set; }
+        public DateOnly JoiningDate { get; set; }
 
         [Column("previous_company_last_working_date")]
-        public DateTime? PreviousCompanyLastWorkingDate { get; set; }
+        public DateOnly? PreviousCompanyLastWorkingDate { get; set; }
 
         [Required]
         [MaxLength(10)]
         [Column("education")]
-        public required string Education { get; set; }
+        public string Education { get; set; }
     }
 }

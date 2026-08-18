@@ -27,7 +27,34 @@ namespace EmployeeManagement.Repositories
         }
         public async Task UpdateEmployee(Employee employee)
         {
-            _context.Employee.Update(employee);
+            // Retrieve the existing entity so we only modify the fields provided by the caller.
+            var existing = await _context.Employee.FindAsync(employee.EmployeeId);
+            if (existing == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(employee.EmployeeName))
+                existing.EmployeeName = employee.EmployeeName;
+
+            if (!string.IsNullOrEmpty(employee.MobileNo))
+                existing.MobileNo = employee.MobileNo;
+
+            if (!string.IsNullOrEmpty(employee.EmailId))
+                existing.EmailId = employee.EmailId;
+
+            if (employee.PANCardNo != null)
+                existing.PANCardNo = employee.PANCardNo;
+
+            if (employee.JoiningDate != default(DateOnly))
+                existing.JoiningDate = employee.JoiningDate;
+
+            if (employee.PreviousCompanyLastWorkingDate.HasValue)
+                existing.PreviousCompanyLastWorkingDate = employee.PreviousCompanyLastWorkingDate;
+
+            if (!string.IsNullOrEmpty(employee.Education))
+                existing.Education = employee.Education;
+
             await _context.SaveChangesAsync();
         }
         public async Task DeleteEmployee(int employeeId)

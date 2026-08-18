@@ -2,6 +2,8 @@
 using EmployeeManagement.Data.Entities;
 using EmployeeManagement.ExtensionService;
 using EmployeeManagement.Repositories;
+using System.Text.RegularExpressions;
+using System.Net.Mail;
 
 namespace EmployeeManagement.Services
 {
@@ -16,7 +18,18 @@ namespace EmployeeManagement.Services
         }
         public async Task<ServiceResponse<bool>> AddEmployee(AddEmployeeDto request)
         {
+            var errors = ValidateAddRequest(request);
+            if (errors.Any())
+            {
+                return ServiceResponse<bool>.Fail(errors, "Validation failed");
+            }
+
             var employeeList = await _employeeRepository.GetAllEmployees();
+            // Check duplicate mobile
+            if (employeeList.Any(e => e.MobileNo == request.MobileNo))
+            {
+                return ServiceResponse<bool>.Fail("Employee with same mobile number already exists");
+            }
 
             var employee = new Employee
             {
@@ -75,15 +88,128 @@ namespace EmployeeManagement.Services
             {
                 return ServiceResponse<bool>.Fail("Employee not found");
             }
-            employee.EmployeeName = request.EmployeeName;
-            employee.MobileNo = request.MobileNo;
-            employee.EmailId = request.EmailId;
-            employee.PANCardNo = request.PANCardNo;
+            var errors = ValidateUpdateRequest(request, employee);
+            if (errors.Any())
+            {
+                return ServiceResponse<bool>.Fail(errors, "Validation failed");
+            }
+
+            // If mobile changed, ensure uniqueness
+            if (!string.IsNullOrWhiteSpace(request.MobileNo) && request.MobileNo != employee.MobileNo)
+            {
+                var employeeList = await _employeeRepository.GetAllEmployees();
+                if (employeeList.Any(e => e.MobileNo == request.MobileNo && e.EmployeeId != employee.EmployeeId))
+                {
+                    return ServiceResponse<bool>.Fail("Employee with same mobile number already exists");
+                }
+                employee.MobileNo = request.MobileNo;
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.EmployeeName)) employee.EmployeeName = request.EmployeeName;
+            if (!string.IsNullOrWhiteSpace(request.EmailId)) employee.EmailId = request.EmailId;
+            if (request.PANCardNo != null) employee.PANCardNo = request.PANCardNo;
             employee.JoiningDate = request.JoiningDate ?? employee.JoiningDate;
             employee.PreviousCompanyLastWorkingDate = request.PreviousCompanyLastWorkingDate;
-            employee.Education = request.Education;
+            if (!string.IsNullOrWhiteSpace(request.Education)) employee.Education = request.Education;
+
             await _employeeRepository.UpdateEmployee(employee);
             return ServiceResponse<bool>.Ok(true);
+        }
+
+        private List<string> ValidateAddRequest(AddEmployeeDto request)
+        {
+            var errors = new List<string>();
+            if (string.IsNullOrWhiteSpace(request.EmployeeName))
+                errors.Add("EmployeeName is mandatory");
+
+            if (string.IsNullOrWhiteSpace(request.MobileNo))
+                errors.Add("MobileNo is mandatory");
+            else
+            {
+                if (!Regex.IsMatch(request.MobileNo, "^[0-9]{10}$"))
+                    errors.Add("MobileNo must be 10 digits");
+                else if (!Regex.IsMatch(request.MobileNo, "^[789][0-9]{9}$"))
+                    errors.Add("MobileNo must start with 7, 8 or 9");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.EmailId))
+                errors.Add("EmailId is mandatory");
+            else
+            {
+                try
+                {
+                    var addr = new MailAddress(request.EmailId);
+                }
+                catch
+                {
+                    errors.Add("EmailId is not valid");
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.PANCardNo))
+            {
+                // PAN format: 5 letters, 4 digits, 1 letter
+                if (!Regex.IsMatch(request.PANCardNo, "^[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}$"))
+                    errors.Add("PANCardNo is not valid");
+            }
+
+            if (request.JoiningDate == default)
+                errors.Add("JoiningDate is mandatory");
+
+            if (request.PreviousCompanyLastWorkingDate.HasValue && request.PreviousCompanyLastWorkingDate > request.JoiningDate)
+                errors.Add("PreviousCompanyLastWorkingDate cannot be greater than JoiningDate");
+
+            var allowed = new[] { "BCA", "BCS", "BSc", "MCA", "MBA", "Phd", "Other" };
+            if (string.IsNullOrWhiteSpace(request.Education) || !allowed.Contains(request.Education))
+                errors.Add("Education is mandatory and must be one of the allowed values");
+
+            return errors;
+        }
+
+        private List<string> ValidateUpdateRequest(UpdateEmployeeDto request, Employee existing)
+        {
+            var errors = new List<string>();
+            if (request.EmployeeName != null && string.IsNullOrWhiteSpace(request.EmployeeName))
+                errors.Add("EmployeeName is mandatory");
+
+            if (request.MobileNo != null)
+            {
+                if (!Regex.IsMatch(request.MobileNo, "^[0-9]{10}$"))
+                    errors.Add("MobileNo must be 10 digits");
+                else if (!Regex.IsMatch(request.MobileNo, "^[789][0-9]{9}$"))
+                    errors.Add("MobileNo must start with 7, 8 or 9");
+            }
+
+            if (request.EmailId != null)
+            {
+                try
+                {
+                    var addr = new MailAddress(request.EmailId);
+                }
+                catch
+                {
+                    errors.Add("EmailId is not valid");
+                }
+            }
+
+            if (request.PANCardNo != null && !string.IsNullOrWhiteSpace(request.PANCardNo))
+            {
+                if (!Regex.IsMatch(request.PANCardNo, "^[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}$"))
+                    errors.Add("PANCardNo is not valid");
+            }
+
+            var joiningDate = request.JoiningDate ?? existing.JoiningDate;
+            if (request.PreviousCompanyLastWorkingDate.HasValue && request.PreviousCompanyLastWorkingDate > joiningDate)
+                errors.Add("PreviousCompanyLastWorkingDate cannot be greater than JoiningDate");
+
+            if (request.Education != null)
+            {
+                var allowed = new[] { "BCA", "BCS", "BSc", "MCA", "MBA", "Phd", "Other" };
+                if (!allowed.Contains(request.Education))
+                    errors.Add("Education must be one of the allowed values");
+            }
+
+            return errors;
         }
         public async Task<ServiceResponse<bool>> DeleteEmployee(int employeeId)
         {

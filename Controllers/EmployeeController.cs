@@ -26,9 +26,9 @@ namespace EmployeeManagement.Controllers
         }
 
         [HttpGet("GetAllEmployees")]
-        public async Task<ActionResult> GetAllEmployees()
+        public async Task<ActionResult> GetAllEmployees([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5)
         {
-            var response = await _employeeService.GetAllEmployees();
+            var response = await _employeeService.GetAllEmployees(pageNumber, pageSize);
             return Ok(response);
         }
 

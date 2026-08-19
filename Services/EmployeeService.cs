@@ -45,9 +45,9 @@ namespace EmployeeManagement.Services
             await _employeeRepository.AddEmployee(employee);
             return ServiceResponse<bool>.Ok(true);
         }
-        public async Task<ServiceResponse<List<EmployeeResponseDto>>> GetAllEmployees()
+        public async Task<ServiceResponse<PagedResponse<EmployeeResponseDto>>> GetAllEmployees(int pageNumber = 1, int pageSize = 5)
         {
-            var employees = await _employeeRepository.GetAllEmployees();
+            var employees = (await _employeeRepository.GetAllEmployees()).ToList().OrderByDescending(e => e.EmployeeId);
             var employeeDtos = employees.Select(e => new EmployeeResponseDto
             {
                 EmployeeId = e.EmployeeId,
@@ -59,7 +59,24 @@ namespace EmployeeManagement.Services
                 PreviousCompanyLastWorkingDate = e.PreviousCompanyLastWorkingDate,
                 Education = e.Education
             }).ToList();
-            return ServiceResponse<List<EmployeeResponseDto>>.Ok(employeeDtos);
+
+            var totalRecords = employeeDtos.Count;
+            if (pageSize < 1) pageSize = 5;
+            if (pageNumber < 1) pageNumber = 1;
+            var totalPages = pageSize > 0 ? (int)Math.Ceiling(totalRecords / (double)pageSize) : 1;
+
+            var pagedData = employeeDtos.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+
+            var pagedResponse = new PagedResponse<EmployeeResponseDto>
+            {
+                Data = pagedData,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalRecords = totalRecords,
+                TotalPages = totalPages
+            };
+
+            return ServiceResponse<PagedResponse<EmployeeResponseDto>>.Ok(pagedResponse);
         }
         public async Task<ServiceResponse<EmployeeResponseDto?>> GetEmployeeById(int employeeId)
         {

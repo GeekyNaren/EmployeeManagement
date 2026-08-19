@@ -5,7 +5,7 @@
         public T? Data { get; set; }
         public bool Success { get; set; } = true;
         public string Message { get; set; } = string.Empty;
-        public List<string> Errors { get; set; } = [];
+        public List<string> Errors { get; set; } = new List<string>();
 
         public ServiceResponse() { }
 
@@ -39,7 +39,7 @@
             {
                 Success = false,
                 Message = message,
-                Errors = errors?.ToList() ?? []
+                Errors = errors?.ToList() ?? new List<string>()
             };
         }
     }

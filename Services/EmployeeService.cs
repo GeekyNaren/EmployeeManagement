@@ -11,6 +11,8 @@ namespace EmployeeManagement.Services
     {
         private readonly IEmployeeRepository _employeeRepository;
         private readonly ILogger<EmployeeService> _logger;
+
+        #region public methods
         public EmployeeService(IEmployeeRepository employeeRepository, ILogger<EmployeeService> logger)
         {
             _employeeRepository = employeeRepository;
@@ -30,13 +32,22 @@ namespace EmployeeManagement.Services
             {
                 return ServiceResponse<bool>.Fail("Employee with same mobile number already exists");
             }
-
+            // check duplicate email
+            if (employeeList.Any(e => e.EmailId.Equals(request.EmailId, StringComparison.OrdinalIgnoreCase)))
+            {
+                return ServiceResponse<bool>.Fail("Employee with same email already exists");
+            }
+            // check duplicate PAN
+            if (!string.IsNullOrWhiteSpace(request.PANCardNo) && employeeList.Any(e => e.PANCardNo != null && e.PANCardNo.Equals(request.PANCardNo, StringComparison.OrdinalIgnoreCase)))
+            {
+                return ServiceResponse<bool>.Fail("Employee with same PAN card number already exists");
+            }
             var employee = new Employee
             {
                 EmployeeName = request.EmployeeName,
                 MobileNo = request.MobileNo,
                 EmailId = request.EmailId,
-                PANCardNo = request.PANCardNo,
+                PANCardNo = request.PANCardNo?.ToUpper(),
                 JoiningDate = request.JoiningDate,
                 PreviousCompanyLastWorkingDate = request.PreviousCompanyLastWorkingDate,
                 Education = request.Education
@@ -54,7 +65,7 @@ namespace EmployeeManagement.Services
                 EmployeeName = e.EmployeeName,
                 MobileNo = e.MobileNo,
                 EmailId = e.EmailId,
-                PANCardNo = e.PANCardNo,
+                PANCardNo = e.PANCardNo.ToUpper(),
                 JoiningDate = e.JoiningDate,
                 PreviousCompanyLastWorkingDate = e.PreviousCompanyLastWorkingDate,
                 Education = e.Education
@@ -91,7 +102,7 @@ namespace EmployeeManagement.Services
                 EmployeeName = employee.EmployeeName,
                 MobileNo = employee.MobileNo,
                 EmailId = employee.EmailId,
-                PANCardNo = employee.PANCardNo,
+                PANCardNo = employee.PANCardNo.ToUpper(),
                 JoiningDate = employee.JoiningDate,
                 PreviousCompanyLastWorkingDate = employee.PreviousCompanyLastWorkingDate,
                 Education = employee.Education
@@ -111,10 +122,10 @@ namespace EmployeeManagement.Services
                 return ServiceResponse<bool>.Fail(errors, "Validation failed");
             }
 
+            var employeeList = await _employeeRepository.GetAllEmployees();
             // If mobile changed, ensure uniqueness
             if (!string.IsNullOrWhiteSpace(request.MobileNo) && request.MobileNo != employee.MobileNo)
             {
-                var employeeList = await _employeeRepository.GetAllEmployees();
                 if (employeeList.Any(e => e.MobileNo == request.MobileNo && e.EmployeeId != employee.EmployeeId))
                 {
                     return ServiceResponse<bool>.Fail("Employee with same mobile number already exists");
@@ -122,9 +133,30 @@ namespace EmployeeManagement.Services
                 employee.MobileNo = request.MobileNo;
             }
 
+            // If email changed, ensure uniqueness
+            if (!string.IsNullOrWhiteSpace(request.EmailId) && request.EmailId != employee.EmailId)
+            {
+                if (employeeList.Any(e => e.EmailId.Equals(request.EmailId, StringComparison.OrdinalIgnoreCase) && e.EmployeeId != employee.EmployeeId))
+                {
+                    return ServiceResponse<bool>.Fail("Employee with same email already exists");
+                }
+                employee.EmailId = request.EmailId;
+            }
+
+            // If PAN changed, ensure uniqueness
+            //if (!string.IsNullOrWhiteSpace(request.PANCardNo) && request.PANCardNo != employee.PANCardNo)
+            if (!string.IsNullOrWhiteSpace(request.PANCardNo) && !string.Equals(request.PANCardNo, employee.PANCardNo, StringComparison.OrdinalIgnoreCase))
+            {
+                if (employeeList.Any(e => e.PANCardNo != null && e.PANCardNo.Equals(request.PANCardNo, StringComparison.OrdinalIgnoreCase) && e.EmployeeId != employee.EmployeeId))
+                {
+                    return ServiceResponse<bool>.Fail("Employee with same PAN card number already exists");
+                }
+                employee.PANCardNo = request.PANCardNo.ToUpper();
+            }
+
             if (!string.IsNullOrWhiteSpace(request.EmployeeName)) employee.EmployeeName = request.EmployeeName;
             if (!string.IsNullOrWhiteSpace(request.EmailId)) employee.EmailId = request.EmailId;
-            if (request.PANCardNo != null) employee.PANCardNo = request.PANCardNo;
+            if (request.PANCardNo != null) employee.PANCardNo = request.PANCardNo.ToUpper();
             employee.JoiningDate = request.JoiningDate ?? employee.JoiningDate;
             employee.PreviousCompanyLastWorkingDate = request.PreviousCompanyLastWorkingDate;
             if (!string.IsNullOrWhiteSpace(request.Education)) employee.Education = request.Education;
@@ -132,7 +164,9 @@ namespace EmployeeManagement.Services
             await _employeeRepository.UpdateEmployee(employee);
             return ServiceResponse<bool>.Ok(true);
         }
+        #endregion
 
+        #region private methods
         private List<string> ValidateAddRequest(AddEmployeeDto request)
         {
             var errors = new List<string>();
@@ -182,7 +216,6 @@ namespace EmployeeManagement.Services
 
             return errors;
         }
-
         private List<string> ValidateUpdateRequest(UpdateEmployeeDto request, Employee existing)
         {
             var errors = new List<string>();
@@ -238,5 +271,6 @@ namespace EmployeeManagement.Services
             await _employeeRepository.DeleteEmployee(employeeId);
             return ServiceResponse<bool>.Ok(true);
         }
+        #endregion
     }
 }

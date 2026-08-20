@@ -210,9 +210,9 @@ namespace EmployeeManagement.Services
             if (request.PreviousCompanyLastWorkingDate.HasValue && request.PreviousCompanyLastWorkingDate > request.JoiningDate)
                 errors.Add("PreviousCompanyLastWorkingDate cannot be greater than JoiningDate");
 
-            var allowed = new[] { "BCA", "BCS", "BSc", "MCA", "MBA", "Phd", "Other" };
-            if (string.IsNullOrWhiteSpace(request.Education) || !allowed.Contains(request.Education))
-                errors.Add("Education is mandatory and must be one of the allowed values");
+            //var allowed = new[] { "BCA", "BCS", "BSc", "MCA", "MBA", "Phd", "Other" };
+            //if (string.IsNullOrWhiteSpace(request.Education) || !allowed.Contains(request.Education))
+            //    errors.Add("Education is mandatory and must be one of the allowed values");
 
             return errors;
         }
@@ -252,12 +252,12 @@ namespace EmployeeManagement.Services
             if (request.PreviousCompanyLastWorkingDate.HasValue && request.PreviousCompanyLastWorkingDate > joiningDate)
                 errors.Add("PreviousCompanyLastWorkingDate cannot be greater than JoiningDate");
 
-            if (request.Education != null)
-            {
-                var allowed = new[] { "BCA", "BCS", "BSc", "MCA", "MBA", "Phd", "Other" };
-                if (!allowed.Contains(request.Education))
-                    errors.Add("Education must be one of the allowed values");
-            }
+            //if (request.Education != null)
+            //{
+            //    var allowed = new[] { "BCA", "BCS", "BSc", "MCA", "MBA", "Phd", "Other" };
+            //    if (!allowed.Contains(request.Education))
+            //        errors.Add("Education must be one of the allowed values");
+            //}
 
             return errors;
         }

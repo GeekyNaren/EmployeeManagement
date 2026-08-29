@@ -65,7 +65,7 @@ namespace EmployeeManagement.Services
                 EmployeeName = e.EmployeeName,
                 MobileNo = e.MobileNo,
                 EmailId = e.EmailId,
-                PANCardNo = e.PANCardNo.ToUpper(),
+                PANCardNo = e.PANCardNo?.ToUpper(),
                 JoiningDate = e.JoiningDate,
                 PreviousCompanyLastWorkingDate = e.PreviousCompanyLastWorkingDate,
                 Education = e.Education

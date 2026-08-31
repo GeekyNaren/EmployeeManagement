@@ -2,7 +2,7 @@
 {
     public class PagedResponse<T>
     {
-        public IReadOnlyList<T> Data { get; init; } = System.Array.Empty<T>();
+        public IReadOnlyList<T> Data { get; init; } = [];
         public int PageNumber { get; init; }
         public int? PageSize { get; init; }
         public int TotalRecords { get; init; }

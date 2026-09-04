@@ -6,14 +6,11 @@
         public bool Success { get; set; } = true;
         public string Message { get; set; } = string.Empty;
         public List<string> Errors { get; set; } = new List<string>();
-
         public ServiceResponse() { }
-
         public ServiceResponse(T data)
         {
             Data = data;
         }
-
         public static ServiceResponse<T> Ok(T data)
         {
             return new ServiceResponse<T>
@@ -22,7 +19,6 @@
                 Success = true
             };
         }
-
         public static ServiceResponse<T> Fail(string message)
         {
             return new ServiceResponse<T>
@@ -32,7 +28,6 @@
                 Errors = new List<string> { message }
             };
         }
-
         public static ServiceResponse<T> Fail(IEnumerable<string> errors, string message = "")
         {
             return new ServiceResponse<T>
